@@ -45,5 +45,7 @@ export const FLAVOR_TAGS: string[] = [
   'Red Velvet',
   'Nata',
   'Frutas de temporada',
+  'Sin gluten 🌾',
+  'Sin lactosa',
   'Y muchos más...',
 ];

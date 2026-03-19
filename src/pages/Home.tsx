@@ -605,6 +605,9 @@ export const HomePage = () => {
               </span>
             ))}
           </div>
+          <p className="text-warm-gray text-sm text-center mt-4 font-sans">
+            Disponemos de opciones <span className="text-gold">sin gluten</span> y sin lactosa bajo encargo. Consúltanos por WhatsApp.
+          </p>
         </FadeIn>
       </Section>
 
