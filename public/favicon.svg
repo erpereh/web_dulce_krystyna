@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Fondo negro con esquinas redondeadas -->
+  <rect width="64" height="64" rx="12" fill="#0a0a0a"/>
+  <!-- Borde dorado sutil -->
+  <rect width="64" height="64" rx="12" fill="none" stroke="#c9a84c" stroke-width="2"/>
+  <!-- Iniciales DK -->
+  <text
+    x="8"
+    y="46"
+    font-family="Georgia, serif"
+    font-size="32"
+    font-weight="700"
+    fill="#c9a84c"
+    letter-spacing="-1"
+  >DK</text>
+</svg>

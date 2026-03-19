@@ -5,7 +5,7 @@ export const CREATION_CATEGORIES: CreationCategory[] = [
     id: 'tartas-personalizadas',
     title: 'Tartas Personalizadas',
     description:
-      'Tu idea hecha realidad. Frozen, Paw Patrol, Pokémon, Baby Shark... cualquier temática, cualquier ocasión. Cada tarta es única.',
+      'Tu idea hecha realidad. Frozen, Pokémon, Dragon Ball... cualquier temática, cualquier ocasión. Cada tarta es única.',
     imageUrl: '/imagenes/7.PNG',
     imageAlt: 'Tarta artesanal de chocolate con frambuesas, reloj dorado y frutos rojos',
   },

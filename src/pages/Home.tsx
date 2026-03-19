@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { m, useScroll, useTransform } from 'motion/react';
+import { m, AnimatePresence, useScroll, useTransform } from 'motion/react';
 import { SEO } from '@/components/ui/SEO';
 import { Section, SectionHeading } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
@@ -11,7 +11,7 @@ import { Lightbox } from '@/components/ui/Lightbox';
 import { BUSINESS_INFO, WHATSAPP_URL } from '@/data/navigation';
 import { CREATION_CATEGORIES, FLAVOR_TAGS } from '@/data/creations';
 import { TESTIMONIALS } from '@/data/testimonials';
-import type { GalleryImage } from '@/types';
+import type { GalleryImage, Testimonial } from '@/types';
 
 const GALLERY_IMAGES: GalleryImage[] = [
   { id: 'g1', src: '/imagenes/1.PNG', alt: 'Tarta personalizada artesanal con decoración detallada', width: 800, height: 800 },
@@ -34,24 +34,28 @@ const PROCESS_STEPS = [
     icon: '📱',
     title: 'Escríbenos por WhatsApp',
     text: 'Contáctanos al 610 645 701 o por Instagram. Estamos encantadas de atenderte.',
+    tooltip: 'Respuesta en menos de 24h',
   },
   {
     number: '02',
     icon: '💬',
     title: 'Cuéntanos tu idea',
     text: 'Háblanos del evento, la temática, los sabores que te gustan y el número de personas.',
+    tooltip: 'Cuéntanos fecha, temática y nº de personas',
   },
   {
     number: '03',
     icon: '🎨',
     title: 'Diseñamos tu tarta',
     text: 'Creamos un diseño único para ti. Cada tarta es una obra de arte personalizada.',
+    tooltip: 'Te enviamos boceto antes de empezar',
   },
   {
     number: '04',
     icon: '🎂',
     title: 'Recógela o te la enviamos',
     text: 'Recogida en tienda o entrega a domicilio. Incluso el mismo día para pedidos urgentes.',
+    tooltip: 'Entrega el mismo día disponible',
   },
 ];
 
@@ -109,22 +113,147 @@ const HOME_JSON_LD = {
 const GOOGLE_MAPS_EMBED =
   'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3039.5!2d-3.6127!3d40.3765!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zQy8gSm9zw6kgR3V0acOpcnJleiBNYXJvdG8sIDI5!5e0!3m2!1ses!2ses!4v1';
 
+const GOOGLE_REVIEWS_URL =
+  'https://www.google.com/maps/search/Dulce+Krystyna+Madrid+Ensanche+Vallecas';
+
+interface FlipCardProps {
+  testimonial: Testimonial;
+}
+
+const FlipCard = ({ testimonial }: FlipCardProps) => {
+  const [flipped, setFlipped] = useState(false);
+
+  return (
+    <div
+      className="h-full cursor-pointer"
+      style={{ perspective: '1000px' }}
+      onMouseEnter={() => setFlipped(true)}
+      onMouseLeave={() => setFlipped(false)}
+    >
+      <div
+        className="relative h-full transition-transform duration-700"
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          willChange: 'transform',
+        }}
+      >
+        {/* CARA DELANTERA — en flujo normal para dar altura al contenedor */}
+        <blockquote
+          className="h-full bg-surface-card border border-border-subtle p-8 flex flex-col"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          <div
+            className="flex gap-1 mb-4"
+            aria-label={`${testimonial.rating} de 5 estrellas`}
+          >
+            {Array.from({ length: testimonial.rating }).map((_, i) => (
+              <m.svg
+                key={i}
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="var(--color-gold)"
+                aria-hidden="true"
+                initial={{ opacity: 0, scale: 0 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ type: 'spring', stiffness: 300, damping: 15, delay: i * 0.08 }}
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </m.svg>
+            ))}
+          </div>
+          <p className="text-cream/90 text-sm leading-relaxed italic flex-1">
+            &ldquo;{testimonial.text}&rdquo;
+          </p>
+          <footer className="mt-6 pt-4 border-t border-border-subtle">
+            <cite className="text-warm-gray text-xs not-italic uppercase tracking-[0.1em]">
+              — {testimonial.name}
+            </cite>
+            <p className="text-warm-gray/50 text-xs mt-1">Pasa el cursor para ver reseña</p>
+          </footer>
+        </blockquote>
+
+        {/* CARA TRASERA — absolute overlay */}
+        <div
+          className="absolute inset-0 bg-surface-card border border-gold/40 p-8 flex flex-col items-center justify-center gap-5"
+          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+        >
+          <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-lg">
+            <span
+              className="text-3xl font-bold leading-none"
+              style={{ color: '#4285F4' }}
+              aria-hidden="true"
+            >
+              G
+            </span>
+          </div>
+          <p className="text-cream/80 text-sm font-sans text-center">
+            Reseña verificada en Google
+          </p>
+          <div className="flex gap-2" aria-label="5 de 5 estrellas">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <svg
+                key={i}
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="var(--color-gold)"
+                aria-hidden="true"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            ))}
+          </div>
+          <p className="text-gold font-display text-xl">5/5 · Google Reviews</p>
+          <a
+            href={GOOGLE_REVIEWS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-cream/70 border border-border-subtle px-4 py-2 hover:border-gold hover:text-gold transition-colors duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Ver más reseñas →
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const HomePage = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });
-
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  // Magnifying glass state
+  const [magnifyPos, setMagnifyPos] = useState({ x: 0, y: 0, w: 600, h: 750 });
+  const [isMagnifying, setIsMagnifying] = useState(false);
+
+  // Process step hover state
+  const [activeStep, setActiveStep] = useState<number | null>(null);
+
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
+  };
+
+  const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMagnifyPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      w: rect.width,
+      h: rect.height,
+    });
   };
 
   return (
@@ -262,8 +391,14 @@ export const HomePage = () => {
       ═══════════════════════════════════════════════════════ */}
       <Section id="nosotras">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          {/* Image with magnifying glass effect */}
           <FadeIn direction="left">
-            <div className="aspect-[4/5] bg-surface-card overflow-hidden rounded-lg border border-gold/20 relative">
+            <div
+              className="aspect-[4/5] bg-surface-card overflow-hidden rounded-lg border border-gold/20 relative cursor-crosshair select-none"
+              onMouseMove={handleImageMouseMove}
+              onMouseEnter={() => setIsMagnifying(true)}
+              onMouseLeave={() => setIsMagnifying(false)}
+            >
               <img
                 src="/imagenes/escaparate.PNG"
                 alt="Interior de Dulce Krystyna con la vitrina de tartas artesanales expuestas"
@@ -271,10 +406,54 @@ export const HomePage = () => {
                 loading="lazy"
                 width={600}
                 height={750}
+                draggable={false}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-gold/10 to-transparent pointer-events-none" />
+
+              {/* Magnifying glass lens */}
+              <AnimatePresence>
+                {isMagnifying && (
+                  <m.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.15 }}
+                    style={{
+                      position: 'absolute',
+                      left: magnifyPos.x - 64,
+                      top: magnifyPos.y - 64,
+                      width: 128,
+                      height: 128,
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: '2px solid var(--color-gold)',
+                      boxShadow:
+                        '0 0 0 1px rgba(201, 168, 76, 0.2), 0 8px 32px rgba(0, 0, 0, 0.6)',
+                      pointerEvents: 'none',
+                      zIndex: 10,
+                    }}
+                  >
+                    <img
+                      src="/imagenes/escaparate.PNG"
+                      alt=""
+                      role="presentation"
+                      draggable={false}
+                      style={{
+                        position: 'absolute',
+                        width: `${magnifyPos.w * 1.8}px`,
+                        height: `${magnifyPos.h * 1.8}px`,
+                        objectFit: 'cover',
+                        left: `${64 - magnifyPos.x * 1.8}px`,
+                        top: `${64 - magnifyPos.y * 1.8}px`,
+                      }}
+                    />
+                  </m.div>
+                )}
+              </AnimatePresence>
             </div>
           </FadeIn>
+
+          {/* Text content */}
           <div>
             <FadeIn direction="right">
               <p className="text-gold-muted text-xs uppercase tracking-[0.2em] font-sans mb-4">
@@ -298,38 +477,67 @@ export const HomePage = () => {
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className="h-px bg-gold w-20 mb-6 origin-left"
             />
-            <m.p
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-warm-gray text-base md:text-lg leading-relaxed mb-4"
-            >
-              Dulce Krystyna nació de la pasión por crear algo único con cada encargo. Somos
-              una pastelería artesanal fundada y dirigida por mujeres, donde cada tarta se
-              diseña y elabora a mano con ingredientes naturales de calidad.
-            </m.p>
-            <m.p
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.35 }}
-              className="text-warm-gray text-base md:text-lg leading-relaxed mb-4"
-            >
-              No somos una cadena. Somos una pasión hecha negocio. Dedicamos tiempo y cariño
-              a cada pieza porque creemos que los momentos especiales merecen algo
-              verdaderamente especial.
-            </m.p>
-            <m.p
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-warm-gray text-base md:text-lg leading-relaxed mb-8"
-            >
-              Cada cliente recibe asesoramiento personalizado para que su encargo sea
-              exactamente como lo imagina — o incluso mejor.
-            </m.p>
+
+            {/* Paragraphs with gold highlight on hover */}
+            <m.div className="mb-4" initial="rest" whileHover="hover">
+              <m.p
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-warm-gray text-base md:text-lg leading-relaxed"
+              >
+                Dulce Krystyna nació de la pasión por crear algo único con cada encargo. Somos
+                una pastelería artesanal fundada y dirigida por mujeres, donde cada tarta se
+                diseña y elabora a mano con ingredientes naturales de calidad.
+              </m.p>
+              <m.span
+                variants={{ rest: { scaleX: 0 }, hover: { scaleX: 1 } }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="block h-0.5 bg-gold origin-left mt-2"
+                aria-hidden="true"
+              />
+            </m.div>
+
+            <m.div className="mb-4" initial="rest" whileHover="hover">
+              <m.p
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.35 }}
+                className="text-warm-gray text-base md:text-lg leading-relaxed"
+              >
+                No somos una cadena. Somos una pasión hecha negocio. Dedicamos tiempo y cariño
+                a cada pieza porque creemos que los momentos especiales merecen algo
+                verdaderamente especial.
+              </m.p>
+              <m.span
+                variants={{ rest: { scaleX: 0 }, hover: { scaleX: 1 } }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="block h-0.5 bg-gold origin-left mt-2"
+                aria-hidden="true"
+              />
+            </m.div>
+
+            <m.div className="mb-8" initial="rest" whileHover="hover">
+              <m.p
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="text-warm-gray text-base md:text-lg leading-relaxed"
+              >
+                Cada cliente recibe asesoramiento personalizado para que su encargo sea
+                exactamente como lo imagina — o incluso mejor.
+              </m.p>
+              <m.span
+                variants={{ rest: { scaleX: 0 }, hover: { scaleX: 1 } }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="block h-0.5 bg-gold origin-left mt-2"
+                aria-hidden="true"
+              />
+            </m.div>
+
             <m.p
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -401,7 +609,7 @@ export const HomePage = () => {
       </Section>
 
       {/* ═══════════════════════════════════════════════════════
-          SECCIÓN 5: GALERÍA — Infinite Marquee
+          SECCIÓN 5: GALERÍA — Infinite Marquee (sin pausa en hover)
       ═══════════════════════════════════════════════════════ */}
       <Section id="galeria">
         <SectionHeading
@@ -410,9 +618,9 @@ export const HomePage = () => {
           centered
         />
 
-        {/* Marquee Container */}
+        {/* Marquee Container — corre siempre sin pausa */}
         <div
-          className="group/marquee overflow-hidden relative"
+          className="overflow-hidden relative"
           style={{
             maskImage:
               'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)',
@@ -422,28 +630,28 @@ export const HomePage = () => {
           aria-hidden="true"
         >
           {/* Row 1: left to right */}
-          <div className="flex gap-4 [animation:marquee_40s_linear_infinite] group-hover/marquee:[animation-play-state:paused] w-max">
+          <div className="flex gap-4 [animation:marquee_40s_linear_infinite] w-max">
             {[...GALLERY_IMAGES, ...GALLERY_IMAGES].map((image, i) => (
               <img
                 key={`row1-${i}`}
                 src={image.src}
                 alt=""
                 role="presentation"
-                className="h-48 md:h-64 aspect-square object-cover rounded-lg flex-shrink-0"
+                className="h-48 md:h-64 aspect-square object-cover rounded-lg flex-shrink-0 transition-transform duration-300 hover:scale-105"
                 loading="lazy"
                 decoding="async"
               />
             ))}
           </div>
           {/* Row 2: right to left */}
-          <div className="flex gap-4 mt-4 [animation:marquee-reverse_30s_linear_infinite] group-hover/marquee:[animation-play-state:paused] w-max">
+          <div className="flex gap-4 mt-4 [animation:marquee-reverse_30s_linear_infinite] w-max">
             {[...GALLERY_IMAGES, ...GALLERY_IMAGES].map((image, i) => (
               <img
                 key={`row2-${i}`}
                 src={image.src}
                 alt=""
                 role="presentation"
-                className="h-48 md:h-64 aspect-square object-cover rounded-lg flex-shrink-0"
+                className="h-48 md:h-64 aspect-square object-cover rounded-lg flex-shrink-0 transition-transform duration-300 hover:scale-105"
                 loading="lazy"
                 decoding="async"
               />
@@ -478,11 +686,7 @@ export const HomePage = () => {
           <p className="text-warm-gray text-base mb-6">
             ¿Te gusta lo que ves? Cuéntanos tu idea y lo hacemos realidad.
           </p>
-          <Button
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <Button href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
             Hacer mi encargo
           </Button>
         </FadeIn>
@@ -498,7 +702,7 @@ export const HomePage = () => {
       />
 
       {/* ═══════════════════════════════════════════════════════
-          SECCIÓN 6: PROCESO DE ENCARGO
+          SECCIÓN 6: PROCESO DE ENCARGO — Pasos interactivos
       ═══════════════════════════════════════════════════════ */}
       <Section className="bg-surface-elevated">
         <SectionHeading
@@ -524,9 +728,21 @@ export const HomePage = () => {
                 hidden: { opacity: 0, y: 40 },
                 visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
               }}
-              className="text-center relative"
+              className="text-center relative p-6 rounded-lg cursor-default"
+              onMouseEnter={() => setActiveStep(index)}
+              onMouseLeave={() => setActiveStep(null)}
             >
-              {/* Connector line (hidden on mobile, visible on lg) */}
+              {/* Hover background overlay */}
+              <m.div
+                animate={{
+                  opacity: activeStep === index ? 1 : 0,
+                }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-surface-card border border-gold/30 rounded-lg -z-10"
+                aria-hidden="true"
+              />
+
+              {/* Connector line */}
               {index < PROCESS_STEPS.length - 1 && (
                 <m.div
                   initial={{ scaleX: 0 }}
@@ -537,12 +753,46 @@ export const HomePage = () => {
                   aria-hidden="true"
                 />
               )}
-              <span className="text-4xl mb-4 block" role="img" aria-hidden="true">
+
+              {/* Icon — rota en hover */}
+              <m.span
+                animate={{ rotate: activeStep === index ? 360 : 0 }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
+                role="img"
+                aria-hidden="true"
+                className="text-4xl mb-4 block"
+              >
                 {step.icon}
-              </span>
-              <p className="text-gold font-display text-2xl mb-3">{step.number}</p>
+              </m.span>
+
+              {/* Número — escala en hover */}
+              <m.p
+                animate={{ scale: activeStep === index ? 1.4 : 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                className="text-gold font-display text-2xl mb-3"
+              >
+                {step.number}
+              </m.p>
+
               <h3 className="text-cream font-display text-lg mb-3">{step.title}</h3>
               <p className="text-warm-gray text-sm leading-relaxed">{step.text}</p>
+
+              {/* Tooltip pill — absolute, no afecta al layout */}
+              <AnimatePresence>
+                {activeStep === index && (
+                  <m.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pt-2 z-10 w-48"
+                  >
+                    <span className="block bg-gold text-[#1a1000] text-xs px-3 py-2 rounded-full text-center font-sans font-medium border border-[#8a6a10] shadow-[0_8px_24px_rgba(0,0,0,0.8)] ring-1 ring-black/20">
+                      {step.tooltip}
+                    </span>
+                  </m.div>
+                )}
+              </AnimatePresence>
             </m.div>
           ))}
         </m.div>
@@ -560,7 +810,7 @@ export const HomePage = () => {
       </Section>
 
       {/* ═══════════════════════════════════════════════════════
-          SECCIÓN 7: TESTIMONIOS
+          SECCIÓN 7: TESTIMONIOS — Flip 3D en hover
       ═══════════════════════════════════════════════════════ */}
       <Section id="testimonios">
         <SectionHeading
@@ -580,42 +830,16 @@ export const HomePage = () => {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
           {TESTIMONIALS.map((testimonial) => (
-            <m.blockquote
+            <m.div
               key={testimonial.id}
               variants={{
                 hidden: { opacity: 0, y: 30 },
                 visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
               }}
-              className="bg-surface-card border border-border-subtle p-8 h-full flex flex-col"
+              className="h-full"
             >
-              {/* Stars with spring animation */}
-              <div className="flex gap-1 mb-4" aria-label={`${testimonial.rating} de 5 estrellas`}>
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
-                  <m.svg
-                    key={i}
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="var(--color-gold)"
-                    aria-hidden="true"
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 15, delay: i * 0.08 }}
-                  >
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </m.svg>
-                ))}
-              </div>
-              <p className="text-cream/90 text-sm leading-relaxed italic flex-1">
-                &ldquo;{testimonial.text}&rdquo;
-              </p>
-              <footer className="mt-6 pt-4 border-t border-border-subtle">
-                <cite className="text-warm-gray text-xs not-italic uppercase tracking-[0.1em]">
-                  — {testimonial.name}
-                </cite>
-              </footer>
-            </m.blockquote>
+              <FlipCard testimonial={testimonial} />
+            </m.div>
           ))}
         </m.div>
       </Section>
@@ -689,10 +913,7 @@ export const HomePage = () => {
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-warm-gray">
                   {BUSINESS_INFO.features.map((feature) => (
-                    <span
-                      key={feature}
-                      className="border border-border-subtle px-3 py-1.5"
-                    >
+                    <span key={feature} className="border border-border-subtle px-3 py-1.5">
                       {feature}
                     </span>
                   ))}
@@ -711,25 +932,26 @@ export const HomePage = () => {
 
             {/* Fachada + Google Maps — Right Column */}
             <FadeIn direction="right" delay={0.2}>
-              <div className="flex flex-col gap-6">
-                {/* Fachada on top */}
-                <div className="aspect-[4/3] overflow-hidden rounded-lg border border-gold/20">
+              <div className="flex flex-col gap-4">
+                {/* Fachada */}
+                <div className="h-[320px] overflow-hidden rounded-lg border border-gold/20">
                   <img
                     src="/imagenes/fachada.PNG"
-                    alt="Fachada exterior del local Dulce Krystyna en el Ensanche de Vallecas, Madrid"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    width={800}
-                    height={600}
+                    alt="Fachada exterior del local Dulce Krystyna en C/ José Gutiérrez Maroto, 29, Madrid"
+                    className="w-full h-full object-cover object-center"
+                    style={{ imageRendering: 'auto' }}
+                    loading="eager"
+                    decoding="sync"
                   />
                 </div>
-                {/* Maps below */}
-                <div className="aspect-video min-h-[250px] bg-surface-card overflow-hidden rounded-lg border border-border-subtle">
+                {/* Mapa — misma altura */}
+                <div className="h-[320px] overflow-hidden rounded-lg border border-border-subtle">
                   <iframe
                     src={GOOGLE_MAPS_EMBED}
                     title="Ubicación de Dulce Krystyna en Google Maps"
-                    className="w-full h-full border-0"
-                    style={{ filter: 'invert(90%) hue-rotate(180deg)' }}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }}
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     allowFullScreen
